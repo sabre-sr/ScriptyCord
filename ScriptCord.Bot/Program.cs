@@ -44,7 +44,11 @@ namespace ScriptCord.Bot
             builder.RegisterType<CommandService>().As<CommandService>().SingleInstance();
             builder.RegisterType<HttpClient>().As<HttpClient>();
 
-            builder.RegisterType<TestingModule>().As<TestingModule>();
+            // Set up all the command modules automatically
+            builder.RegisterAssemblyTypes(typeof(ModuleBase<SocketCommandContext>).Assembly)
+                .Where(t => t.Name.EndsWith("Module"))
+                .AsImplementedInterfaces();
+
             builder.RegisterType<CommandHandlingService>().As<ICommandHandlingService>();
             return builder.Build();
         }

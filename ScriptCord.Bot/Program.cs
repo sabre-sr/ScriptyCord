@@ -3,6 +3,7 @@ using Autofac.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using ScriptCord.Bot.Commands;
 
 namespace ScriptCord.Bot
@@ -16,6 +17,7 @@ namespace ScriptCord.Bot
 
         public async Task MainAsync()
         {
+            IConfiguration configuration = SetupConfiguration();
             Container = SetupAutofac();
 
             using (var scope = Container.BeginLifetimeScope())
@@ -27,7 +29,7 @@ namespace ScriptCord.Bot
                 scope.Resolve<CommandService>().Log += LogAsync;
 
                 // Do not accidentally upload an API token ;) 
-                await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("token"), true);
+                await client.LoginAsync(TokenType.Bot, configuration.GetSection("discord").GetSection("token").Get<string>(), true);
                 await client.StartAsync();
 
                 await scope.Resolve<ICommandHandlingService>().InitializeAsync();
@@ -51,6 +53,16 @@ namespace ScriptCord.Bot
 
             builder.RegisterType<CommandHandlingService>().As<ICommandHandlingService>();
             return builder.Build();
+        }
+
+        private IConfiguration SetupConfiguration()
+        {
+            string? env = Environment.GetEnvironmentVariable("ENVIRONMENT_TYPE");
+            string inject = env != null ? $".{env}" : string.Empty;
+            IConfiguration config = new ConfigurationBuilder()
+                .AddJsonFile($"appsettings{ inject }.json")
+                .Build();
+            return config;
         }
 
         private Task LogAsync(LogMessage log)

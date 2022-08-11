@@ -4,13 +4,17 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using NLog;
 using ScriptCord.Bot.Commands;
 
 namespace ScriptCord.Bot
 { 
     class Bot
     {
-        private IContainer Container { get; set; }
+        //private readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private ILoggerFacade<Bot> _loggerFacade;
+
+        private IContainer _container { get; set; }
 
         public static void Main(string[] args)
             => new Bot().MainAsync().GetAwaiter().GetResult();
@@ -18,15 +22,20 @@ namespace ScriptCord.Bot
         public async Task MainAsync()
         {
             IConfiguration configuration = SetupConfiguration();
-            Container = SetupAutofac();
+            _container = SetupAutofac();
+            _loggerFacade = SetupLogging();
 
-            using (var scope = Container.BeginLifetimeScope())
+            using (var scope = _container.BeginLifetimeScope())
             {
-                var client = scope.Resolve<DiscordSocketClient>();
-                client.Log += LogAsync;
+                _loggerFacade.Log(LogLevel.Info, "created an autofac lifetime scope for modules and services");
 
-                // TODO: This below could go into the constructor perhaps once the logging is moved to a class
-                scope.Resolve<CommandService>().Log += LogAsync;
+                var client = scope.Resolve<DiscordSocketClient>();
+                client.Log += new LoggerFacade<DiscordSocketClient>().LogAsync;
+                scope.Resolve<CommandService>().Log += new LoggerFacade<CommandService>().LogAsync;
+
+                #region loggers
+                scope.Resolve<ILoggerFacade<TestingModule>>();
+                #endregion
 
                 // Do not accidentally upload an API token ;) 
                 await client.LoginAsync(TokenType.Bot, configuration.GetSection("discord").GetSection("token").Get<string>(), true);
@@ -47,9 +56,9 @@ namespace ScriptCord.Bot
             builder.RegisterType<HttpClient>().As<HttpClient>();
 
             // Set up all the command modules automatically
+            builder.RegisterGeneric(typeof(LoggerFacade<>)).As(typeof(ILoggerFacade<>)).InstancePerDependency();
             builder.RegisterAssemblyTypes(typeof(ModuleBase<SocketCommandContext>).Assembly)
-                .Where(t => t.Name.EndsWith("Module"))
-                .AsImplementedInterfaces();
+                .Where(t => t.Name.EndsWith("Module"));
 
             builder.RegisterType<CommandHandlingService>().As<ICommandHandlingService>();
             return builder.Build();
@@ -65,11 +74,18 @@ namespace ScriptCord.Bot
             return config;
         }
 
-        private Task LogAsync(LogMessage log)
+        private ILoggerFacade<Bot> SetupLogging()
         {
-            // TODO: normal logger for this
-            Console.WriteLine(log.ToString());
-            return Task.CompletedTask;
+            var config = new NLog.Config.LoggingConfiguration();
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "logfile.txt" };
+            var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
+
+            config.AddRule(LogLevel.Info, LogLevel.Fatal, logconsole);
+            config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+
+            NLog.LogManager.Configuration = config;
+
+            return new LoggerFacade<Bot>();
         }
     }
 }

@@ -19,6 +19,11 @@ namespace ScriptCord.Bot.Commands
     
     public class TestingModule : ModuleBase<SocketCommandContext>, ITestingModule
     {
+        private readonly ILoggerFacade<TestingModule> _logger;
+
+        public TestingModule(ILoggerFacade<TestingModule> loggerFacade)
+            => _logger = loggerFacade;
+
         [Command("ping")]
         [Alias("pong", "hello")]
         public Task PingAsync()

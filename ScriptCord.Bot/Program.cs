@@ -66,6 +66,13 @@ namespace ScriptCord.Bot
             await client.LoginAsync(TokenType.Bot, token);
             await client.StartAsync();
 
+            Console.CancelKeyPress += delegate
+            {
+                _logger.Log(LogLevel.Info, "Gracefully shutting down the bot");
+                services.GetRequiredService<DiscordSocketClient>().Dispose();
+                System.Environment.Exit(0);
+            };
+
             await Task.Delay(Timeout.Infinite);
         }
 

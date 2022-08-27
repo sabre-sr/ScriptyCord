@@ -18,13 +18,15 @@ namespace ScriptCord.Bot
         private readonly InteractionService _interactionService;
         private readonly IServiceProvider _services;
         private readonly IConfiguration _configuration;
+        private readonly LoggerFacade<InteractionHandler> _logger;
 
-        public InteractionHandler(DiscordSocketClient client, InteractionService interactionService, IServiceProvider services, IConfiguration config)
+        public InteractionHandler(DiscordSocketClient client, InteractionService interactionService, IServiceProvider services, IConfiguration config, LoggerFacade<InteractionHandler> logger)
         {
             _client = client;
             _interactionService = interactionService;
             _services = services;
             _configuration = config;
+            _logger = logger;
         }
 
         public async Task InitializeAsync()
@@ -34,7 +36,7 @@ namespace ScriptCord.Bot
         }
 
         private async Task LogAsync(LogMessage log)
-            => Console.WriteLine(log);
+            => await _logger.LogAsync(log);
 
         private async Task ReadyAsync()
         {

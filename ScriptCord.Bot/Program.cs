@@ -70,7 +70,6 @@ namespace ScriptCord.Bot
         }
 
         private async Task LogAsync(LogMessage message)
-            //=> Console.WriteLine(message.ToString());
             => await _logger.LogAsync(message);
 
         public static bool IsDebug()

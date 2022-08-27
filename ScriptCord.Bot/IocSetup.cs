@@ -27,11 +27,13 @@ namespace ScriptCord.Bot
             _services.AddSingleton(configuration);
             _services.AddSingleton<DiscordSocketClient>();
             _services.AddSingleton<InteractionHandler>();
+            _services.AddScoped(typeof(LoggerFacade<>));
         }
 
         public void SetupLogger()
         {
             // TODO
+            
         }
 
         public void SetupCommandModules()

@@ -11,15 +11,18 @@ namespace ScriptCord.Bot
     public class Program
     {
         static void Main(string[] args)
-            => new Program().RunAsync()
+            => new Program()
+                .RunAsync()
                 .GetAwaiter()
                 .GetResult();
 
         private IocSetup _ioc;
+        private LoggerFacade<Program> _logger;
 
         private Program()
         {
             var config = SetupConfiguration();
+            SetupLogging();
             _ioc = new IocSetup(config);
             _ioc.SetupCommandModules();
         }
@@ -34,11 +37,25 @@ namespace ScriptCord.Bot
             return config;
         }
 
+        private void SetupLogging()
+        {
+            var config = new NLog.Config.LoggingConfiguration();
+
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "file.txt" };
+            var logconsole = new NLog.Targets.ColoredConsoleTarget("logconsole");
+
+            config.AddRule(LogLevel.Info, LogLevel.Fatal, logconsole);
+            config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+
+            NLog.LogManager.Configuration = config;
+        }
+
         private async Task RunAsync()
         {
             IServiceProvider services = _ioc.Build();
             var config = services.GetRequiredService<IConfiguration>();
             var client = services.GetRequiredService<DiscordSocketClient>();
+            _logger = services.GetRequiredService<LoggerFacade<Program>>();
 
             client.Log += LogAsync;
 
@@ -53,7 +70,8 @@ namespace ScriptCord.Bot
         }
 
         private async Task LogAsync(LogMessage message)
-            => Console.WriteLine(message.ToString());
+            //=> Console.WriteLine(message.ToString());
+            => await _logger.LogAsync(message);
 
         public static bool IsDebug()
         {

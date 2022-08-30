@@ -11,22 +11,32 @@ namespace ScriptCord.Bot.Commands
 {
     public class UserManagementModule : InteractionModuleBase<SocketInteractionContext>
     {
-        //private readonly ILoggerFacade<UserManagementModule> _logger;
+        private readonly LoggerFacade<UserManagementModule> _logger;
 
-        //public UserManagementModule(ILoggerFacade<UserManagementModule> logger)
-        //    => _logger = logger;
+        public UserManagementModule(LoggerFacade<UserManagementModule> logger)
+        {
+            _logger = logger;
+        }
 
-        [SlashCommand("ban", "Bans the specified user from the server")]
-        public Task Ban([Summary(description: "User that will be affected by this command")] IGuildUser user)
-            => throw new NotImplementedException();
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [SlashCommand("ban", "Bans specified user from the server")]
+        public async Task Ban([Summary(description: "User that will be affected by this command")] IGuildUser user, [Summary(description: "Reason for this action")] string reason = "")
+        {
+            await user.BanAsync(0, reason);
+            _logger.LogDebug($"[GuildId({user.Guild.Id})]: user {user.Nickname} has been banned from the server with '{reason}' reason");
+            await RespondAsync(
+                reason != null ? $"User {user.Nickname} has been banned from the server with the specified reason" : $"User {user.Nickname} has been banned from the server",
+                null, false, true
+            );
+        }
 
-        //[SlashCommand("Unban", "")]
-        //public Task Unban()
-        //    => throw new NotImplementedException();
-
-
-        [SlashCommand("kick", "Kicks the specified user from the server")]
-        public Task Kick([Summary(description: "User that will be affected by this command")] IGuildUser user)
-            => throw new NotImplementedException();
+        [RequireUserPermission(GuildPermission.Administrator)]
+        [SlashCommand("kick", "Kicks specified user from the server")]
+        public async Task Kick([Summary(description: "User that will be affected by this command")] IGuildUser user, [Summary(description: "Reason for this action")] string reason = "")
+        {
+            await user.KickAsync(reason);
+            _logger.LogDebug($"[GuildId({user.Guild.Id})]: user {user.Nickname} has been kicked out of the server");
+            await RespondAsync($"User {user.Nickname} has been kicked out of the server", null, false, true);
+        }
     }
 }

@@ -40,7 +40,16 @@ namespace ScriptCord.Bot
 
         private async Task ReadyAsync()
         {
-            await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            try
+            {
+                await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            }
+            catch (Exception e) 
+            {
+                _logger.Log(NLog.LogLevel.Fatal, e.Message);
+                _client.Dispose();
+                System.Environment.Exit(1);
+            }
             await _interactionService.RegisterCommandsGloballyAsync(true);
             _client.InteractionCreated += HandleInteraction;
         }

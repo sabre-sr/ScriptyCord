@@ -18,22 +18,12 @@ namespace ScriptCord.Bot
         public IocSetup(IConfiguration configuration)
         {
             _services = new ServiceCollection();
-            //_services.AddSingleton(new DiscordSocketConfig()
-            //{
-            //    GatewayIntents = Discord.GatewayIntents.AllUnprivileged | Discord.GatewayIntents.GuildMembers,
-            //    AlwaysDownloadUsers = true,
-            //});
+            
             _services.AddSingleton(new DiscordSocketConfig());
             _services.AddSingleton(configuration);
             _services.AddSingleton<DiscordSocketClient>();
             _services.AddSingleton<InteractionHandler>();
             _services.AddScoped(typeof(LoggerFacade<>));
-        }
-
-        public void SetupLogger()
-        {
-            // TODO
-            
         }
 
         public void SetupCommandModules()

@@ -56,5 +56,14 @@ namespace ScriptCord.Bot
 
         public void Log(LogLevel level, string log)
             => _logger.Log(level, log);
+
+        public void LogException(Exception exception)
+            => _logger.Log(NLog.LogLevel.Error, exception);
+
+        public void LogFatalException(Exception exception)
+            => _logger.Log(NLog.LogLevel.Fatal, exception);
+
+        public void LogDebug(string message)
+            => _logger.Log(NLog.LogLevel.Debug, message);
     }
 }

@@ -18,9 +18,9 @@ namespace ScriptCord.Bot
         private readonly InteractionService _interactionService;
         private readonly IServiceProvider _services;
         private readonly IConfiguration _configuration;
-        private readonly LoggerFacade<InteractionHandler> _logger;
+        private readonly ILoggerFacade<InteractionHandler> _logger;
 
-        public InteractionHandler(DiscordSocketClient client, InteractionService interactionService, IServiceProvider services, IConfiguration config, LoggerFacade<InteractionHandler> logger)
+        public InteractionHandler(DiscordSocketClient client, InteractionService interactionService, IServiceProvider services, IConfiguration config, ILoggerFacade<InteractionHandler> logger)
         {
             _client = client;
             _interactionService = interactionService;
@@ -43,6 +43,7 @@ namespace ScriptCord.Bot
             try
             {
                 await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+                await _interactionService.RegisterCommandsGloballyAsync(true);
             }
             catch (Exception e) 
             {
@@ -50,7 +51,7 @@ namespace ScriptCord.Bot
                 _client.Dispose();
                 System.Environment.Exit(1);
             }
-            await _interactionService.RegisterCommandsGloballyAsync(true);
+            
             _client.InteractionCreated += HandleInteraction;
         }
 
@@ -63,6 +64,7 @@ namespace ScriptCord.Bot
 
                 if (!result.IsSuccess)
                 {
+                    _logger.Log(NLog.LogLevel.Error, $"[GuildId({context.Guild.Id}),ChannelId({context.Channel.Id})] error while executing command: {result.ErrorReason}");
                     switch (result.Error)
                     {
                         case InteractionCommandError.UnmetPrecondition:

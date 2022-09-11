@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using CSharpFunctionalExtensions;
+using Discord;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,11 @@ namespace ScriptCord.Bot
     {
         Task LogAsync(LogMessage message);
         void Log(LogLevel level, string log);
+        public void LogInfo(string log);
+        public void LogError(Result result);
+        public void LogException(Exception exception);
+        public void LogFatalException(Exception exception);
+        public void LogDebug(string message);
     }
 
     public class LoggerFacade<T> : ILoggerFacade<T>
@@ -56,6 +62,12 @@ namespace ScriptCord.Bot
 
         public void Log(LogLevel level, string log)
             => _logger.Log(level, log);
+
+        public void LogInfo(string log)
+            => _logger.Log(NLog.LogLevel.Info, log);
+
+        public void LogError(Result result)
+            => _logger.Log(NLog.LogLevel.Error, result.Error);
 
         public void LogException(Exception exception)
             => _logger.Log(NLog.LogLevel.Error, exception);

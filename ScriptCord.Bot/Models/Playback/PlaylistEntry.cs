@@ -1,4 +1,6 @@
-﻿using System;
+﻿using CSharpFunctionalExtensions;
+using ScriptCord.Core.Persistency;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -7,19 +9,45 @@ using System.Threading.Tasks;
 
 namespace ScriptCord.Bot.Models.Playback
 {
-    [Table("playlist_entries", Schema = "scriptcord")]
-    public class PlaylistEntry
+    public class PlaylistEntry : GuidEntity, IModelValidation
     {
-        [Column("id", Order = 0)]
-        public Guid Id { get; set; }
+        public virtual Playlist Playlist { get; set; }
 
-        [Column("playlist_id", Order = 1)]
-        public int PlaylistId { get; set; }
+        public virtual string Title { get; set; }
 
-        [Column("title", Order = 2)]
-        public string Title { get; set; }
+        public virtual string Source { get; set; }
 
-        [Column("source", Order = 3)]
-        public string Source { get; set; }
+        public virtual string SourceIdentifier { get; set; }
+
+        public virtual long AudioLength { get; set; }
+
+        public virtual DateTime UploadTimestamp { get; set; }
+
+        public virtual string AudioLengthFormatted()
+        {
+            TimeSpan t = TimeSpan.FromMilliseconds(AudioLength);
+            string intervalString = null;
+            if (AudioLength >= 60)
+                intervalString = t.ToString(@"mm\:ss\:fff");
+            else
+                intervalString = t.ToString(@"ss\:fff");
+
+            return intervalString;
+        }
+
+        public virtual Result Validate()
+        {
+            if (Title == null || Title.Length == 0)
+                return Result.Failure("Title was not supplied");
+            else if (Title.Length > 150)
+                return Result.Failure("Title can be only 150 characters long");
+
+            if (Source == null || Source.Length == 0)
+                return Result.Failure("Source was not supplied");
+            else if (Source.Length > 30)
+                return Result.Failure("Source can be only 30 characters long");
+
+            return Result.Success();
+        }
     }
 }

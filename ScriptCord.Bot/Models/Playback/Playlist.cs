@@ -1,4 +1,6 @@
-﻿using System;
+﻿using CSharpFunctionalExtensions;
+using ScriptCord.Core.Persistency;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -7,22 +9,27 @@ using System.Threading.Tasks;
 
 namespace ScriptCord.Bot.Models.Playback
 {
-    [Table("playlists", Schema = "scriptcord")]
-    public class Playlist
+    public class Playlist : LongEntity, IModelValidation
     {
-        [Column("id", Order = 0)]
-        public int Id { get; set; }
+        public virtual long GuildId { get; set; }
 
-        [Column("guild_id", Order = 1)]
-        public long GuildId { get; set; }
+        public virtual string Name { get; set; }
 
-        [Column("name", Order = 2)]
-        public string Name { get; set; }
+        public virtual bool IsDefault { get; set; }
 
-        [Column("is_default", Order = 3)]
-        public bool IsDefault { get; set; }
+        public virtual bool AdminOnly { get; set; }
 
-        [Column("admin_only", Order = 4)]
-        public bool AdminOnly { get; set; }
+        public virtual IList<PlaylistEntry> PlaylistEntries { get; set; } = new List<PlaylistEntry>();
+
+        public virtual Result Validate()
+        {
+            if (Name == null || Name.Length == 0)
+                return Result.Failure("The playlist name was not supplied");
+            else if(Name.Length > 80)
+                return Result.Failure("Playlist name length can be only 80 characters long");
+             
+
+            return Result.Success();
+        }
     }
 }

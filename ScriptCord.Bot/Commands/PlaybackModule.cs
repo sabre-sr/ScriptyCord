@@ -46,7 +46,7 @@ namespace ScriptCord.Bot.Commands
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Listing entries in {playlistName} playlist");
 
-            var playlistResult = await _playlistService.GetPlaylistDetails((long)Context.Guild.Id, playlistName, IsUserGuildAdministrator());
+            var playlistResult = await _playlistService.GetPlaylistDetails(Context.Guild.Id, playlistName, IsUserGuildAdministrator());
             if (playlistResult.IsFailure)
             {
                 await RespondAsync(
@@ -95,7 +95,7 @@ namespace ScriptCord.Bot.Commands
         public async Task ListPlaylists()
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Listing guild's playlists");
-            Result<IEnumerable<LightPlaylistListingDto>> playlistsResult = await _playlistService.GetPlaylistDetailsByGuildIdAsync((long)Context.Guild.Id);
+            Result<IEnumerable<LightPlaylistListingDto>> playlistsResult = await _playlistService.GetPlaylistDetailsByGuildIdAsync(Context.Guild.Id);
             if (playlistsResult.IsFailure)
             {
                 await RespondAsync(embed: new EmbedBuilder()
@@ -132,7 +132,7 @@ namespace ScriptCord.Bot.Commands
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Creating a playlist");
             var isPremiumUser = true;
 
-            var result = await _playlistService.CreateNewPlaylist((long)Context.Guild.Id, name, isPremiumUser);
+            var result = await _playlistService.CreateNewPlaylist(Context.Guild.Id, name, isPremiumUser);
             if (result.IsSuccess)
             {
                 await RespondAsync(
@@ -159,7 +159,7 @@ namespace ScriptCord.Bot.Commands
         public async Task RenamePlaylist([Summary(description: "Old name of the playlist")] string oldName, string newName)
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Renaming a playlist");
-            var result = await _playlistService.RenamePlaylist((long)Context.Guild.Id, oldName, newName, IsUserGuildAdministrator());
+            var result = await _playlistService.RenamePlaylist(Context.Guild.Id, oldName, newName, IsUserGuildAdministrator());
             if (result.IsSuccess)
             {
                 await RespondAsync(
@@ -186,7 +186,7 @@ namespace ScriptCord.Bot.Commands
         public async Task RemovePlaylist([Summary(description: "Name of the playlist")] string name)
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Removing a playlist");
-            var result = await _playlistService.RemovePlaylist((long) Context.Guild.Id, name, IsUserGuildAdministrator());
+            var result = await _playlistService.RemovePlaylist(Context.Guild.Id, name, IsUserGuildAdministrator());
             if (result.IsSuccess)
             {
                 await RespondAsync(
@@ -217,7 +217,7 @@ namespace ScriptCord.Bot.Commands
         public async Task AddEntry([Summary(description: "Name of the playlist")] string playlistName, [Summary(description: "Link to the video or audio")] string url)
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Adding an entry to a playlist");
-            var result = await _playlistEntriesService.AddEntryFromUrlToPlaylistByName((long) Context.Guild.Id, playlistName, url);
+            var result = await _playlistEntriesService.AddEntryFromUrlToPlaylistByName(Context.Guild.Id, playlistName, url);
             EmbedBuilder builder = new EmbedBuilder().WithColor(_modulesEmbedColor);
 
             if (result.IsSuccess)
@@ -240,7 +240,7 @@ namespace ScriptCord.Bot.Commands
         public async Task RemoveEntry([Summary(description: "Name of the playlist")] string playlistName, [Summary(description: "Name of the entry")] string entryName)
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Removing an entry from a playlist");
-            var result = await _playlistEntriesService.RemoveEntryFromPlaylistByName((long)Context.Guild.Id, playlistName, entryName);
+            var result = await _playlistEntriesService.RemoveEntryFromPlaylistByName(Context.Guild.Id, playlistName, entryName);
             EmbedBuilder builder = new EmbedBuilder().WithColor(_modulesEmbedColor);
 
             if (result.IsSuccess)

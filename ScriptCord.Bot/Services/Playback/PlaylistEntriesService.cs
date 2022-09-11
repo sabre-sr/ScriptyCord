@@ -15,8 +15,8 @@ namespace ScriptCord.Bot.Services.Playback
 {
     public interface IPlaylistEntriesService
     {
-        Task<Result<AudioMetadataDto>> AddEntryFromUrlToPlaylistByName(long guildId, string playlistName, string url);
-        Task<Result<AudioMetadataDto>> RemoveEntryFromPlaylistByName(long guildId, string playlistName, string entryName, bool isAdmin = false);
+        Task<Result<AudioMetadataDto>> AddEntryFromUrlToPlaylistByName(ulong guildId, string playlistName, string url);
+        Task<Result<AudioMetadataDto>> RemoveEntryFromPlaylistByName(ulong guildId, string playlistName, string entryName, bool isAdmin = false);
     }
 
     public class PlaylistEntriesService : IPlaylistEntriesService
@@ -34,7 +34,7 @@ namespace ScriptCord.Bot.Services.Playback
             _configuration = configuration;
         }
 
-        public async Task<Result<AudioMetadataDto>> AddEntryFromUrlToPlaylistByName(long guildId, string playlistName, string url)
+        public async Task<Result<AudioMetadataDto>> AddEntryFromUrlToPlaylistByName(ulong guildId, string playlistName, string url)
         {
             var playlistResult = await _playlistRepository.GetSingleAsync(x => x.GuildId == guildId && x.Name == playlistName);
             if (playlistResult.IsFailure)
@@ -72,7 +72,7 @@ namespace ScriptCord.Bot.Services.Playback
             return Result.Success(metadata);
         }
 
-        public async Task<Result<AudioMetadataDto>> RemoveEntryFromPlaylistByName(long guildId, string playlistName, string entryName, bool isAdmin = false)
+        public async Task<Result<AudioMetadataDto>> RemoveEntryFromPlaylistByName(ulong guildId, string playlistName, string entryName, bool isAdmin = false)
         {
             var playlistResult = await _playlistRepository.GetSingleAsync(x => x.GuildId == guildId && x.Name == playlistName);
             if (playlistResult.IsFailure)

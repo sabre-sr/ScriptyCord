@@ -1,4 +1,5 @@
 ﻿using FluentNHibernate.Mapping;
+using ScriptCord.Core.Persistency;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace ScriptCord.Bot.Models.Playback
             Schema("scriptycord");
             Table("playlists");
             Id(x => x.Id).Column("id");
-            Map(x => x.GuildId).Column("guild_id");
+            Map(x => x.GuildId).Column("guild_id").CustomType<ULongType>();
             Map(x => x.Name).Column("name");
             Map(x => x.IsDefault).Column("is_default");
             Map(x => x.AdminOnly).Column("admin_only");

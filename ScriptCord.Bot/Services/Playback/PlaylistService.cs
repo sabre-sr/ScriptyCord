@@ -15,12 +15,11 @@ namespace ScriptCord.Bot.Services.Playback
 {
     public interface IPlaylistService
     {
-        Task<Result<LightPlaylistListingDto>> GetPlaylistDetails(long guildId, string playlistName, bool isAdmin = false);
-        string GetEntriesByGuildIdAndPlaylistName(long guildId, string playlistName, bool isAdmin = false);
-        Task<Result<IEnumerable<LightPlaylistListingDto>>> GetPlaylistDetailsByGuildIdAsync(long guildId);
-        Task<Result> CreateNewPlaylist(long guildId, string playlistName, bool isPremiumUser = false);
-        Task<Result> RenamePlaylist(long guildId, string oldPlaylistName, string newPlaylistName, bool isAdmin = false);
-        Task<Result> RemovePlaylist(long guildId, string playlistName, bool isAdmin = false);
+        Task<Result<LightPlaylistListingDto>> GetPlaylistDetails(ulong guildId, string playlistName, bool isAdmin = false);
+        Task<Result<IEnumerable<LightPlaylistListingDto>>> GetPlaylistDetailsByGuildIdAsync(ulong guildId);
+        Task<Result> CreateNewPlaylist(ulong guildId, string playlistName, bool isPremiumUser = false);
+        Task<Result> RenamePlaylist(ulong guildId, string oldPlaylistName, string newPlaylistName, bool isAdmin = false);
+        Task<Result> RemovePlaylist(ulong guildId, string playlistName, bool isAdmin = false);
     }
 
     public class PlaylistService : IPlaylistService
@@ -36,7 +35,7 @@ namespace ScriptCord.Bot.Services.Playback
             _playlistEntriesRepository = playlistEntriesRepository;
         }
 
-        public async Task<Result<LightPlaylistListingDto>> GetPlaylistDetails(long guildId, string playlistName, bool isAdmin = false)
+        public async Task<Result<LightPlaylistListingDto>> GetPlaylistDetails(ulong guildId, string playlistName, bool isAdmin = false)
         {
             var playlistResult = await _playlistRepository.GetSingleAsync(x => x.GuildId == guildId && x.Name == playlistName);
             if (playlistResult.IsFailure && playlistResult.Value == null)
@@ -68,12 +67,7 @@ namespace ScriptCord.Bot.Services.Playback
             return Result.Success(new LightPlaylistListingDto(playlist.Name, playlist.IsDefault, playlist.AdminOnly, playlist.PlaylistEntries.Count, lastFifteenClips));
         }
 
-        public string GetEntriesByGuildIdAndPlaylistName(long guildId, string playlistName, bool isAdmin = false)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<Result<IEnumerable<LightPlaylistListingDto>>> GetPlaylistDetailsByGuildIdAsync(long guildId)
+        public async Task<Result<IEnumerable<LightPlaylistListingDto>>> GetPlaylistDetailsByGuildIdAsync(ulong guildId)
         {
             var result = await _playlistRepository.GetFiltered(x => x.GuildId == guildId);
             if (result.IsFailure)
@@ -86,7 +80,7 @@ namespace ScriptCord.Bot.Services.Playback
             return Result.Success(playlists.Select(x => new LightPlaylistListingDto(x.Name, x.IsDefault, x.AdminOnly, x.PlaylistEntries.Count)));
         }
 
-        public async Task<Result> CreateNewPlaylist(long guildId, string playlistName, bool isPremiumUser = false)
+        public async Task<Result> CreateNewPlaylist(ulong guildId, string playlistName, bool isPremiumUser = false)
         {
             var countResult = await _playlistRepository.CountAsync(x => x.GuildId == guildId && x.Name == playlistName);
             if (countResult.IsSuccess && countResult.Value != 0)
@@ -133,7 +127,7 @@ namespace ScriptCord.Bot.Services.Playback
             return result;
         }
     
-        public async Task<Result> RenamePlaylist(long guildId, string oldPlaylistName, string newPlaylistName, bool isAdmin = false)
+        public async Task<Result> RenamePlaylist(ulong guildId, string oldPlaylistName, string newPlaylistName, bool isAdmin = false)
         {
             var countResult = await _playlistRepository.CountAsync(x => x.GuildId == guildId && x.Name == newPlaylistName);
             if (countResult.IsSuccess && countResult.Value != 0)
@@ -171,7 +165,7 @@ namespace ScriptCord.Bot.Services.Playback
             return result;
         }
 
-        public async Task<Result> RemovePlaylist(long guildId, string playlistName, bool isAdmin = false)
+        public async Task<Result> RemovePlaylist(ulong guildId, string playlistName, bool isAdmin = false)
         {
             //var countResult = await _playlistRepository.CountAsync(x => x.GuildId == guildId && x.Name == playlistName);
             //if (countResult.IsSuccess && countResult.Value == 0)

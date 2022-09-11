@@ -11,7 +11,7 @@ namespace ScriptCord.Bot.Models.Playback
 {
     public class Playlist : LongEntity, IModelValidation
     {
-        public virtual long GuildId { get; set; }
+        public virtual ulong GuildId { get; set; }
 
         public virtual string Name { get; set; }
 

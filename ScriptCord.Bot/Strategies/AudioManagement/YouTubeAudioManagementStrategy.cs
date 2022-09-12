@@ -31,11 +31,9 @@ namespace ScriptCord.Bot.Strategies.AudioManagement
             var baseFolder = _configuration.GetSection("store").GetValue<string>("audioPath");
             var targetFilename = $"{baseFolder}{filename}.{_configuration.GetSection("store").GetValue<string>("defaultAudioExtension")}";
 
-            // TODO: This must be an event trigger that will be handled somewhere else as all the other audio management actions
             try
             {
                 await _client.Videos.DownloadAsync(metadata.Url, targetFilename);
-                //_client.Videos.GetAsync(metadata.SourceId)
             }
             catch (Exception e)
             {

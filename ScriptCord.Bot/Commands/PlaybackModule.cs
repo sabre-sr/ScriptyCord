@@ -248,5 +248,80 @@ namespace ScriptCord.Bot.Commands
         }
 
         #endregion EntriesManagement
+
+        #region PlaybackManagement
+
+        [SlashCommand("play", "Plays the selected playlist in the voice chat that the user is currently in")]
+        public async Task Play([Summary(description: "Name of the playlist")] string playlistName)
+        {
+            _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Starting playlback of the specified playlist");
+            IVoiceChannel channel = null;
+            channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
+            
+            EmbedBuilder embedBuilder = new EmbedBuilder().WithColor(_modulesEmbedColor);
+            if (channel is null)
+                embedBuilder.WithTitle("Failure").WithDescription("You are not in a voice channel!");
+            else
+                embedBuilder.WithDescription("Joining your voice channel...");
+
+            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+
+            if (channel is not null)
+            {
+                //var audioClient = await channel.ConnectAsync();
+                //await channel.DisconnectAsync();
+            }
+        }
+
+
+        [SlashCommand("stop", "Stops playback and leaves the voice chat")]
+        public async Task Stop()
+        {
+            _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Stopping playlback in voice chat");
+            IVoiceChannel channel = null;
+            channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
+
+            EmbedBuilder embedBuilder = new EmbedBuilder().WithColor(_modulesEmbedColor);
+            if (channel is null)
+                embedBuilder.WithTitle("Failure").WithDescription("You are not in a voice channel!");
+            else
+                embedBuilder.WithDescription("Stopping and leaving your voice channel...");
+
+            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+        }
+
+        [SlashCommand("pause", "Pauses playback of the current song without leaving the voice channel")]
+        public async Task Pause()
+        {
+            _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Pausing playlback in voice chat");
+            IVoiceChannel channel = null;
+            channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
+
+            EmbedBuilder embedBuilder = new EmbedBuilder().WithColor(_modulesEmbedColor);
+            if (channel is null)
+                embedBuilder.WithTitle("Failure").WithDescription("You are not in a voice channel!");
+            else
+                embedBuilder.WithDescription("Pausing playback...");
+
+            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+        }
+
+        [SlashCommand("next", "Skips the current song and starts playing next song")]
+        public async Task Next()
+        {
+            _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Skipping to next song in voice chat");
+            IVoiceChannel channel = null;
+            channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
+
+            EmbedBuilder embedBuilder = new EmbedBuilder().WithColor(_modulesEmbedColor);
+            if (channel is null)
+                embedBuilder.WithTitle("Failure").WithDescription("You are not in a voice channel!");
+            else
+                embedBuilder.WithDescription("Skipping to next song...");
+
+            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+        }
+
+        #endregion
     }
 }

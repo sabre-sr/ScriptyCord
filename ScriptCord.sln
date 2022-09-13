@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScriptCord.Bot", "ScriptCor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScriptCord.Migrations", "ScriptCord.Migrations\ScriptCord.Migrations.csproj", "{2D17A329-9915-4A7B-AA49-87E7D4BE16D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptCord.Core", "ScriptCord.Core\ScriptCord.Core.csproj", "{0257AC4E-531B-4762-A106-0757DD51DF64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScriptCord.Core", "ScriptCord.Core\ScriptCord.Core.csproj", "{0257AC4E-531B-4762-A106-0757DD51DF64}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

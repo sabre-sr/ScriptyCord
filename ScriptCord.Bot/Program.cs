@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using ScriptCord.Bot.Commands;
+using ScriptCord.Bot.Workers.Playback;
 
 namespace ScriptCord.Bot
 {
@@ -26,6 +27,7 @@ namespace ScriptCord.Bot
             _ioc = new IocSetup(config);
             _ioc.SetupRepositories(config);
             _ioc.SetupServices();
+            _ioc.SetupWorkers();
             _ioc.SetupCommandModules();
         }
 
@@ -68,10 +70,13 @@ namespace ScriptCord.Bot
             await client.LoginAsync(TokenType.Bot, token);
             await client.StartAsync();
 
+            await services.GetRequiredService<PlaybackWorker>().Run();
+
             Console.CancelKeyPress += delegate
             {
                 _logger.Log(LogLevel.Info, "Gracefully shutting down the bot");
                 services.GetRequiredService<DiscordSocketClient>().Dispose();
+                services.GetRequiredService<PlaybackWorker>().Stop();
                 System.Environment.Exit(0);
             };
 

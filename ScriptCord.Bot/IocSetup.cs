@@ -12,6 +12,7 @@ using ScriptCord.Bot.Models.Playback;
 using ScriptCord.Bot.Repositories;
 using ScriptCord.Bot.Repositories.Playback;
 using ScriptCord.Bot.Services.Playback;
+using ScriptCord.Bot.Workers.Playback;
 using ScriptCord.Core.Persistency;
 using System;
 using System.Collections.Generic;
@@ -58,6 +59,11 @@ namespace ScriptCord.Bot
             _services.AddSingleton<InteractionHandler>();
             _services.AddSingleton(configuration);
             _services.AddScoped(typeof(ILoggerFacade<>), typeof(LoggerFacade<>));
+        }
+
+        public void SetupWorkers()
+        {
+            _services.AddSingleton<PlaybackWorker>();
         }
 
         public void SetupRepositories(IConfiguration config)

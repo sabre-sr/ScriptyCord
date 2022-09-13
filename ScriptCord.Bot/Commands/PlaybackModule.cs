@@ -1,11 +1,14 @@
 ﻿using AngleSharp.Dom;
 using CSharpFunctionalExtensions;
 using Discord;
+using Discord.Audio;
 using Discord.Interactions;
 using ScriptCord.Bot.Dto.Playback;
+using ScriptCord.Bot.Events.Playback;
 using ScriptCord.Bot.Repositories;
 using ScriptCord.Bot.Repositories.Playback;
 using ScriptCord.Bot.Services.Playback;
+using ScriptCord.Bot.Workers.Playback;
 using ScriptCord.Core.DiscordExtensions;
 using System;
 using System.Collections.Generic;
@@ -25,13 +28,15 @@ namespace ScriptCord.Bot.Commands
 
         private readonly IPlaylistService _playlistService;
         private readonly IPlaylistEntriesService _playlistEntriesService;
+        private readonly PlaybackWorker _playbackWorkerService;
 
-        public PlaybackModule(ILoggerFacade<PlaybackModule> logger, IPlaylistService playlistService, IPlaylistEntriesService playlistEntriesService)
+        public PlaybackModule(ILoggerFacade<PlaybackModule> logger, IPlaylistService playlistService, IPlaylistEntriesService playlistEntriesService, PlaybackWorker playbackWorkerService)
         {
             _logger = logger;
 
             _playlistService = playlistService;
             _playlistEntriesService = playlistEntriesService;
+            _playbackWorkerService = playbackWorkerService;
         }
 
         #region PlaylistManagement
@@ -264,11 +269,22 @@ namespace ScriptCord.Bot.Commands
             else
                 embedBuilder.WithDescription("Joining your voice channel...");
 
+            // TODO: First check if already connected to the current voice channel or another one
             await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
 
             if (channel is not null)
             {
-                //var audioClient = await channel.ConnectAsync();
+                IAudioClient client = null;
+                try
+                {
+                    client = await channel.ConnectAsync();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogException(e);
+                }
+                PlaySongEvent playbackEvent = new PlaySongEvent(client, DateTime.Now, channel, Context.User as IGuildUser, Context.Guild.Id);
+                _playbackWorkerService.Events.Enqueue(playbackEvent);
                 //await channel.DisconnectAsync();
             }
         }

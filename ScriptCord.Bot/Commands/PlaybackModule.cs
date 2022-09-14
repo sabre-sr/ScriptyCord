@@ -23,12 +23,12 @@ namespace ScriptCord.Bot.Commands
     [Group("playback", "Manages and plays audio in voice channels")]
     public class PlaybackModule : ScriptCordCommandModule
     {
-        private readonly Discord.Color _modulesEmbedColor = Discord.Color.DarkRed;
+        private new readonly Discord.Color _modulesEmbedColor = Discord.Color.DarkRed;
         private readonly ILoggerFacade<PlaybackModule> _logger;
 
         private readonly IPlaylistService _playlistService;
         private readonly IPlaylistEntriesService _playlistEntriesService;
-        private readonly PlaybackWorker _playbackWorkerService;
+        //private readonly PlaybackWorker _playbackWorkerService;
 
         public PlaybackModule(ILoggerFacade<PlaybackModule> logger, IPlaylistService playlistService, IPlaylistEntriesService playlistEntriesService, PlaybackWorker playbackWorkerService)
         {
@@ -36,7 +36,7 @@ namespace ScriptCord.Bot.Commands
 
             _playlistService = playlistService;
             _playlistEntriesService = playlistEntriesService;
-            _playbackWorkerService = playbackWorkerService;
+            //_playbackWorkerService = playbackWorkerService;
         }
 
         #region PlaylistManagement
@@ -274,18 +274,16 @@ namespace ScriptCord.Bot.Commands
 
             if (channel is not null)
             {
-                IAudioClient client = null;
-                try
+                var shuffledEntriesResult = await _playlistService.GetShuffledEntries(Context.Guild.Id, playlistName, IsUserGuildAdministrator());
+                if (shuffledEntriesResult.IsFailure)
                 {
-                    client = await channel.ConnectAsync();
+                    await FollowupAsync(embed: new EmbedBuilder().WithColor(_modulesEmbedColor).WithTitle("Playback failure").WithDescription(shuffledEntriesResult.Error).Build());
+                    return;
                 }
-                catch (Exception e)
-                {
-                    _logger.LogException(e);
-                }
-                PlaySongEvent playbackEvent = new PlaySongEvent(client, DateTime.Now, channel, Context.User as IGuildUser, Context.Guild.Id);
-                _playbackWorkerService.Events.Enqueue(playbackEvent);
-                //await channel.DisconnectAsync();
+
+                IAudioClient client = await channel.ConnectAsync();
+                PlaySongEvent playbackEvent = new PlaySongEvent(client, DateTime.Now, channel, Context.User as IGuildUser, Context.Guild.Id, shuffledEntriesResult.Value);
+                PlaybackWorker.Events.Enqueue(playbackEvent);
             }
         }
 

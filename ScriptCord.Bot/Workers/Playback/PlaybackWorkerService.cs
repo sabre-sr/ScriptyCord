@@ -1,5 +1,4 @@
 ﻿using FluentNHibernate.Conventions;
-using Microsoft.Extensions.Hosting;
 using ScriptCord.Bot.Events;
 using ScriptCord.Bot.Events.Playback;
 using System;
@@ -15,7 +14,7 @@ namespace ScriptCord.Bot.Workers.Playback
         private readonly ILoggerFacade<PlaybackWorker> _logger;
 
         // TODO: Perhaps change this into a property with a mutex if there is no suitable implementation of queue for that
-        public Queue<IExecutableEvent> Events { get; private set; }
+        public static Queue<IExecutableEvent> Events { get; } = new Queue<IExecutableEvent>();
 
         private Dictionary<ulong, Thread> _playbackThreadsByGuildId;
 
@@ -24,7 +23,6 @@ namespace ScriptCord.Bot.Workers.Playback
         public PlaybackWorker(ILoggerFacade<PlaybackWorker> logger)
         {
             _logger = logger;
-            Events = new Queue<IExecutableEvent>();
             _playbackThreadsByGuildId = new Dictionary<ulong, Thread>();
         }
 
@@ -35,34 +33,40 @@ namespace ScriptCord.Bot.Workers.Playback
             {
                 while (Events.IsNotEmpty())
                 {
-                    var playbackEvent = Events.Dequeue();
-
-                    if (playbackEvent.ShouldBeExecutedNow())
+                    int queueLength = Events.Count;
+                    for (int i = 0; i < queueLength; i++)
                     {
-                        if (playbackEvent is PlaySongEvent)
+                        var playbackEvent = Events.Dequeue();
+
+                        if (playbackEvent.ShouldBeExecutedNow())
                         {
-                            Thread thread = new Thread(new ThreadStart(
-                                () =>
-                                {
-                                    var resultTask = playbackEvent.ExecuteAsync();
-                                    resultTask.Wait();
-                                    var result = resultTask.Result;
-                                    if (result.IsFailure)
-                                        _logger.LogError(result);
-                                }
-                            ));
-                            _playbackThreadsByGuildId[playbackEvent.GuildId] = thread;
-                            thread.Start();
+                            if (playbackEvent is PlaySongEvent)
+                            {
+                                Thread thread = new Thread(new ThreadStart(
+                                    () =>
+                                    {
+                                        var resultTask = playbackEvent.ExecuteAsync();
+                                        resultTask.Wait();
+                                        var result = resultTask.Result;
+                                        if (result.IsFailure)
+                                            _logger.LogError(result);
+                                    }
+                                ));
+                                _playbackThreadsByGuildId[playbackEvent.GuildId] = thread;
+                                thread.Start();
+                            }
+                            //else
+                            //{
+                            //    var result = await playbackEvent.ExecuteAsync();
+                            //    if (result.IsFailure)
+                            //        _logger.LogError(result);
+                            //}
                         }
                         else
-                        {
-                            var result = await playbackEvent.ExecuteAsync();
-                            if (result.IsFailure)
-                                _logger.LogError(result);
-                        }
+                            Events.Enqueue(playbackEvent);
                     }
+                    await Task.Delay(500);
                 }
-
                 await Task.Delay(500);
             }
         }

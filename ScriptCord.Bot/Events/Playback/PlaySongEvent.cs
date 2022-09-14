@@ -1,6 +1,8 @@
 ﻿using CSharpFunctionalExtensions;
 using Discord;
 using Discord.Audio;
+using ScriptCord.Bot.Dto.Playback;
+using ScriptCord.Bot.Workers.Playback;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,13 +14,13 @@ namespace ScriptCord.Bot.Events.Playback
 {
     public class PlaySongEvent : PlaybackEventBase, IExecutableEvent
     {
-        private Queue<Guid> Playlist;
+        private IList<PlaylistEntryDto> _playlist;
 
         public ulong GuildId { get; protected set; }
 
-        public PlaySongEvent(IAudioClient client, DateTime timeOfExecution, IVoiceChannel channel, IGuildUser user, ulong guildId) : base(client, timeOfExecution, channel, user) 
+        public PlaySongEvent(IAudioClient client, DateTime timeOfExecution, IVoiceChannel channel, IGuildUser user, ulong guildId, IList<PlaylistEntryDto> playlist) : base(client, timeOfExecution, channel, user) 
         {
-            Playlist = new Queue<Guid>();
+            _playlist = playlist;
             GuildId = guildId;
         }
 
@@ -27,12 +29,15 @@ namespace ScriptCord.Bot.Events.Playback
 
         public async Task<Result> ExecuteAsync()
         {
-            //Guid id = Playlist.Dequeue();
+            var currentEntry = _playlist[0];
+            _playlist.RemoveAt(0);
+            if (_playlist.Count > 0)
+            {
+                DateTime playbackEndsAt = DateTime.Now.Add(TimeSpan.FromMilliseconds(currentEntry.Length + 1000));
+                PlaybackWorker.Events.Enqueue(new PlaySongEvent(_client, playbackEndsAt, _channel, _user, GuildId, _playlist));
+            }
 
-            // TODO: Get metadata of song (don't store audiometadata as it will require )
-            string path = "downloads/audio/YouTube-zZuIMcmNZnU.ogg";
-
-            using (var ffmpeg = CreateStream(path))
+            using (var ffmpeg = CreateStream(currentEntry.Path))
             using (var output = ffmpeg.StandardOutput.BaseStream)
             using (var discord = _client.CreatePCMStream(Discord.Audio.AudioApplication.Music))
             {
@@ -40,8 +45,6 @@ namespace ScriptCord.Bot.Events.Playback
                 catch (Exception e) { return Result.Failure(e.Message); }
                 finally { await discord.FlushAsync(); }
             }
-
-            // TODO: Schedule next event
 
             return Result.Success();
         }

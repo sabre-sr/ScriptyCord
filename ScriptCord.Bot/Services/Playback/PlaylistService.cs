@@ -5,6 +5,7 @@ using ScriptCord.Bot.Models.Playback;
 using ScriptCord.Bot.Repositories;
 using ScriptCord.Bot.Repositories.Playback;
 using ScriptCord.Bot.Strategies.AudioManagement;
+using ScriptCord.Core.Algorithms.Shuffling;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
@@ -23,6 +24,7 @@ namespace ScriptCord.Bot.Services.Playback
         Task<Result> CreateNewPlaylist(ulong guildId, string playlistName, bool isPremiumUser = false);
         Task<Result> RenamePlaylist(ulong guildId, string oldPlaylistName, string newPlaylistName, bool isAdmin = false);
         Task<Result> RemovePlaylist(ulong guildId, string playlistName, bool isAdmin = false);
+        Task<Result<IList<PlaylistEntryDto>>> GetShuffledEntries(ulong guildId, string playlistName, bool isAdmin = false);
     }
 
     public class PlaylistService : IPlaylistService
@@ -176,7 +178,7 @@ namespace ScriptCord.Bot.Services.Playback
             if (modelResult.IsFailure)
             {
                 _logger.LogError(modelResult);
-                return Result.Failure("Unexpected error occurred while creating new playlist.");
+                return Result.Failure("Unexpected error occurred while removing playlist.");
             }
             else if (modelResult.Value == null)
                 return Result.Failure("Specified playlist does not exist in this server");
@@ -249,6 +251,36 @@ namespace ScriptCord.Bot.Services.Playback
             }
 
             return Result.Success();
+        }
+
+        public async Task<Result<IList<PlaylistEntryDto>>> GetShuffledEntries(ulong guildId, string playlistName, bool isAdmin = false)
+        {
+            var modelResult = await _playlistRepository.GetSingleAsync(x => x.GuildId == guildId && x.Name == playlistName);
+            if (modelResult.IsFailure)
+            {
+                _logger.LogError(modelResult);
+                return Result.Failure<IList<PlaylistEntryDto>>("Unexpected error occurred while finding the playlist");
+            }
+            else if (modelResult.Value == null)
+                return Result.Failure<IList<PlaylistEntryDto>>("Specified playlist does not exist in this server");
+            else if (modelResult.Value.PlaylistEntries.Count == 0)
+                return Result.Failure<IList<PlaylistEntryDto>>("Playlist is empty nothing to shuffle");
+            else if (modelResult.Value.AdminOnly && !isAdmin)
+                return Result.Failure<IList<PlaylistEntryDto>>("Only an admin can use this playlist");
+
+            var baseFolder = _configuration.GetSection("store").GetValue<string>("audioPath");
+            var audioExtension = _configuration.GetSection("store").GetValue<string>("defaultAudioExtension");
+            
+            IList<PlaylistEntryDto> playlistEntries = modelResult.Value.PlaylistEntries.Select(x =>
+            {
+                var filename = $"{x.Source}-{x.SourceIdentifier}";
+                return new PlaylistEntryDto(x.Title, x.AudioLength, $"{baseFolder}{filename}.{audioExtension}");
+            }).ToList();
+            
+            IShuffle<PlaylistEntryDto> shuffler = new FisherYatesListShuffle<PlaylistEntryDto>(playlistEntries);
+            shuffler.Shuffle();
+
+            return Result.Success(playlistEntries);
         }
 
         private IAudioManagementStrategy GetStrategyBySource(string source)

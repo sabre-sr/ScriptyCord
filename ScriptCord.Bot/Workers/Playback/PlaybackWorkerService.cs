@@ -22,8 +22,6 @@ namespace ScriptCord.Bot.Workers.Playback
 
         public static Queue<(NLog.LogLevel, string)> EventLogsQueue { get; } = new Queue<(NLog.LogLevel, string)>();
 
-        private Dictionary<ulong, PlaySongEvent> _currentPlaybacks;
-
         private Dictionary<ulong, PlaybackSession> _sessions;
 
         private bool _stop = false;
@@ -31,7 +29,6 @@ namespace ScriptCord.Bot.Workers.Playback
         public PlaybackWorker(ILoggerFacade<PlaybackWorker> logger)
         {
             _logger = logger;
-            _currentPlaybacks = new Dictionary<ulong, PlaySongEvent>();
             _sessions = new Dictionary<ulong, PlaybackSession>();
         }
 
@@ -77,6 +74,9 @@ namespace ScriptCord.Bot.Workers.Playback
 
         public void Stop()
             => _stop = true;
+
+        public bool HasPlaybackSession(ulong guildId)
+            => _sessions.ContainsKey(guildId);
 
         private class PlaybackSession
         {

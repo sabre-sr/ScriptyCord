@@ -28,7 +28,7 @@ namespace ScriptCord.Bot.Commands
 
         private readonly IPlaylistService _playlistService;
         private readonly IPlaylistEntriesService _playlistEntriesService;
-        //private readonly PlaybackWorker _playbackWorkerService;
+        private readonly PlaybackWorker _playbackWorkerService;
 
         public PlaybackModule(ILoggerFacade<PlaybackModule> logger, IPlaylistService playlistService, IPlaylistEntriesService playlistEntriesService, PlaybackWorker playbackWorkerService)
         {
@@ -36,7 +36,7 @@ namespace ScriptCord.Bot.Commands
 
             _playlistService = playlistService;
             _playlistEntriesService = playlistEntriesService;
-            //_playbackWorkerService = playbackWorkerService;
+            _playbackWorkerService = playbackWorkerService;
         }
 
         #region PlaylistManagement
@@ -260,6 +260,12 @@ namespace ScriptCord.Bot.Commands
         public async Task Play([Summary(description: "Name of the playlist")] string playlistName)
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Starting playlback of the specified playlist");
+            if (_playbackWorkerService.HasPlaybackSession(Context.Guild.Id))
+            {
+                await RespondAsync(embed: new EmbedBuilder().WithColor(_modulesEmbedColor).WithTitle("Failure").WithDescription("Bot is already playing in your server!").Build());
+                return;
+            }
+
             IVoiceChannel channel = null;
             channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
             
@@ -292,6 +298,12 @@ namespace ScriptCord.Bot.Commands
         public async Task Stop()
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Stopping playlback in voice chat");
+            if (!_playbackWorkerService.HasPlaybackSession(Context.Guild.Id))
+            {
+                await RespondAsync(embed: new EmbedBuilder().WithColor(_modulesEmbedColor).WithTitle("Failure").WithDescription("Bot is not playing in your server!").Build());
+                return;
+            }
+
             IVoiceChannel channel = null;
             channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
 
@@ -313,6 +325,12 @@ namespace ScriptCord.Bot.Commands
         public async Task Pause()
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Pausing playlback in voice chat");
+            if (!_playbackWorkerService.HasPlaybackSession(Context.Guild.Id))
+            {
+                await RespondAsync(embed: new EmbedBuilder().WithColor(_modulesEmbedColor).WithTitle("Failure").WithDescription("Bot is not playing in your server!").Build());
+                return;
+            }
+
             IVoiceChannel channel = null;
             channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
 
@@ -334,6 +352,12 @@ namespace ScriptCord.Bot.Commands
         public async Task Unpause()
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Unpausing playlback in voice chat");
+            if (!_playbackWorkerService.HasPlaybackSession(Context.Guild.Id))
+            {
+                await RespondAsync(embed: new EmbedBuilder().WithColor(_modulesEmbedColor).WithTitle("Failure").WithDescription("Bot is not playing in your server!").Build());
+                return;
+            }
+
             IVoiceChannel channel = null;
             channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
 
@@ -355,7 +379,12 @@ namespace ScriptCord.Bot.Commands
         public async Task Next()
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Skipping to next song in voice chat");
-            // TODO: Get channel from worker instead and if no channel found then error
+            if (!_playbackWorkerService.HasPlaybackSession(Context.Guild.Id))
+            {
+                await RespondAsync(embed: new EmbedBuilder().WithColor(_modulesEmbedColor).WithTitle("Failure").WithDescription("Bot is not playing in your server!").Build());
+                return;
+            }
+
             IVoiceChannel channel = null;
             channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
 

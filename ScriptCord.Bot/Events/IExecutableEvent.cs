@@ -10,9 +10,5 @@ namespace ScriptCord.Bot.Events
     public interface IExecutableEvent
     {
         public ulong GuildId { get; }
-
-        public bool ShouldBeExecutedNow();
-
-        public Task<Result> ExecuteAsync();
     }
 }

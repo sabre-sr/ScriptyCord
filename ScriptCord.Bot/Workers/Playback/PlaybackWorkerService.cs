@@ -1,4 +1,7 @@
-﻿using FluentNHibernate.Conventions;
+﻿using Discord.Audio;
+using Discord;
+using FluentNHibernate.Conventions;
+using ScriptCord.Bot.Dto.Playback;
 using ScriptCord.Bot.Events;
 using ScriptCord.Bot.Events.Playback;
 using System;
@@ -6,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Threading;
 
 namespace ScriptCord.Bot.Workers.Playback
 {
@@ -13,17 +18,21 @@ namespace ScriptCord.Bot.Workers.Playback
     {
         private readonly ILoggerFacade<PlaybackWorker> _logger;
 
-        // TODO: Perhaps change this into a property with a mutex if there is no suitable implementation of queue for that
         public static Queue<IExecutableEvent> Events { get; } = new Queue<IExecutableEvent>();
 
-        private Dictionary<ulong, Thread> _playbackThreadsByGuildId;
+        public static Queue<(NLog.LogLevel, string)> EventLogsQueue { get; } = new Queue<(NLog.LogLevel, string)>();
+
+        private Dictionary<ulong, PlaySongEvent> _currentPlaybacks;
+
+        private Dictionary<ulong, PlaybackSession> _sessions;
 
         private bool _stop = false;
 
         public PlaybackWorker(ILoggerFacade<PlaybackWorker> logger)
         {
             _logger = logger;
-            _playbackThreadsByGuildId = new Dictionary<ulong, Thread>();
+            _currentPlaybacks = new Dictionary<ulong, PlaySongEvent>();
+            _sessions = new Dictionary<ulong, PlaybackSession>();
         }
 
         public async Task Run()
@@ -31,47 +40,140 @@ namespace ScriptCord.Bot.Workers.Playback
             _logger.LogInfo("starting worker execution");
             while (!_stop)
             {
+                int executed = 0;
                 while (Events.IsNotEmpty())
                 {
-                    int queueLength = Events.Count;
-                    for (int i = 0; i < queueLength; i++)
-                    {
-                        var playbackEvent = Events.Dequeue();
+                    var playbackEvent = Events.Dequeue();
+                    executed++;
 
-                        if (playbackEvent.ShouldBeExecutedNow())
-                        {
-                            if (playbackEvent is PlaySongEvent)
-                            {
-                                Thread thread = new Thread(new ThreadStart(
-                                    () =>
-                                    {
-                                        var resultTask = playbackEvent.ExecuteAsync();
-                                        resultTask.Wait();
-                                        var result = resultTask.Result;
-                                        if (result.IsFailure)
-                                            _logger.LogError(result);
-                                    }
-                                ));
-                                _playbackThreadsByGuildId[playbackEvent.GuildId] = thread;
-                                thread.Start();
-                            }
-                            //else
-                            //{
-                            //    var result = await playbackEvent.ExecuteAsync();
-                            //    if (result.IsFailure)
-                            //        _logger.LogError(result);
-                            //}
-                        }
-                        else
-                            Events.Enqueue(playbackEvent);
+                    if (playbackEvent is PlaySongEvent)
+                    {
+                        var castedEvent = (PlaySongEvent)playbackEvent;
+                        _sessions[playbackEvent.GuildId] = new PlaybackSession(castedEvent.Playlist, castedEvent.Client);
+                        _sessions[playbackEvent.GuildId].StartPlaybackThread();
                     }
-                    await Task.Delay(500);
+                    else if (playbackEvent is SkipSongEvent)
+                        _sessions[playbackEvent.GuildId]?.SkipSong();
+                    else if (playbackEvent is PauseSongEvent)
+                        _sessions[playbackEvent.GuildId]?.PausePlayback();
+                    else if (playbackEvent is UnpauseSongEvent)
+                        _sessions[playbackEvent.GuildId]?.UnpausePlayback();
+                    else if (playbackEvent is StopPlaybackEvent)
+                        _sessions[playbackEvent.GuildId]?.StopPlaybackThread();
                 }
+
+                while (EventLogsQueue.IsNotEmpty())
+                {
+                    var log = EventLogsQueue.Dequeue();
+                    _logger.Log(log.Item1, log.Item2);
+                }
+
+                if (executed > 0)
+                    _logger.LogInfo($"Executed {executed} playback events");
+                
                 await Task.Delay(500);
             }
         }
 
         public void Stop()
             => _stop = true;
+
+        private class PlaybackSession
+        {
+            private IList<PlaylistEntryDto> _playlist;
+
+            private Thread _playbackThread;
+
+            private IAudioClient _client;
+
+            private CancellationTokenSource _cancellationTokenSource;
+
+            private bool _stopPlayback = false;
+
+            private bool _pausePlayback = false;
+
+            public PlaybackSession(IList<PlaylistEntryDto> playlist, IAudioClient client)
+            {
+                _playlist = playlist;
+                _client = client;
+            }
+
+            public void StartPlaybackThread()
+            {
+                _playbackThread = new Thread(new ThreadStart(
+                    () =>
+                    {
+                        var resultTask = PlayInBackground();
+                        resultTask.Wait();
+                    }
+                ));
+                _playbackThread.Start();
+            }
+
+            public void SkipSong()
+            {
+                _cancellationTokenSource.Cancel();
+            }
+
+            public void PausePlayback()
+            {
+                _pausePlayback = true;
+                _cancellationTokenSource.Cancel();
+            }
+
+            public void UnpausePlayback() => _pausePlayback = false;
+
+            public void StopPlaybackThread()
+            {
+                _stopPlayback = true;
+                _cancellationTokenSource.Cancel();
+            }
+
+            private async Task PlayInBackground()
+            {
+                while (_playlist.Count > 0)
+                {
+                    if (_stopPlayback)
+                        break;
+
+                    if (_pausePlayback)
+                    {
+                        while (_pausePlayback)
+                            Thread.Sleep(1000);
+                    }
+
+                    var currentEntry = _playlist[0];
+
+                    _cancellationTokenSource = new CancellationTokenSource();
+
+                    using (var ffmpeg = CreateStream(currentEntry.Path))
+                    using (var stream = _client.CreatePCMStream(AudioApplication.Music))
+                    {
+                        try { await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream, _cancellationTokenSource.Token); }
+                        catch (OperationCanceledException e) { }
+                        catch (Exception e) 
+                        {
+                            PlaybackWorker.EventLogsQueue.Enqueue((NLog.LogLevel.Error, e.Message));
+                        }
+                        finally { await stream.FlushAsync();  }
+                    }
+
+                    if (!_pausePlayback)
+                        _playlist.RemoveAt(0);
+                }
+                await _client.StopAsync();
+            }
+
+            private Process CreateStream(string path)
+            {
+                return Process.Start(new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                });
+            }
+        }
     }
 }

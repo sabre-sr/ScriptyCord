@@ -282,7 +282,7 @@ namespace ScriptCord.Bot.Commands
                 }
 
                 IAudioClient client = await channel.ConnectAsync();
-                PlaySongEvent playbackEvent = new PlaySongEvent(client, DateTime.Now, channel, Context.User as IGuildUser, Context.Guild.Id, shuffledEntriesResult.Value);
+                PlaySongEvent playbackEvent = new PlaySongEvent(client, channel, Context.Guild.Id, shuffledEntriesResult.Value);
                 PlaybackWorker.Events.Enqueue(playbackEvent);
             }
         }
@@ -302,6 +302,11 @@ namespace ScriptCord.Bot.Commands
                 embedBuilder.WithDescription("Stopping and leaving your voice channel...");
 
             await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+            if (channel is not null)
+            {
+                StopPlaybackEvent stopPlaybackEvent = new StopPlaybackEvent(Context.Guild.Id);
+                PlaybackWorker.Events.Enqueue(stopPlaybackEvent);
+            }
         }
 
         [SlashCommand("pause", "Pauses playback of the current song without leaving the voice channel")]
@@ -318,12 +323,39 @@ namespace ScriptCord.Bot.Commands
                 embedBuilder.WithDescription("Pausing playback...");
 
             await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+            if (channel is not null)
+            {
+                PauseSongEvent pauseSongEvent = new PauseSongEvent(Context.Guild.Id);
+                PlaybackWorker.Events.Enqueue(pauseSongEvent);
+            }
+        }
+
+        [SlashCommand("unpause", "Unpauses playback")]
+        public async Task Unpause()
+        {
+            _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Unpausing playlback in voice chat");
+            IVoiceChannel channel = null;
+            channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
+
+            EmbedBuilder embedBuilder = new EmbedBuilder().WithColor(_modulesEmbedColor);
+            if (channel is null)
+                embedBuilder.WithTitle("Failure").WithDescription("You are not in a voice channel!");
+            else
+                embedBuilder.WithDescription("Unpausing playback...");
+
+            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+            if (channel is not null)
+            {
+                UnpauseSongEvent unpauseSongEvent = new UnpauseSongEvent(Context.Guild.Id);
+                PlaybackWorker.Events.Enqueue(unpauseSongEvent);
+            }
         }
 
         [SlashCommand("next", "Skips the current song and starts playing next song")]
         public async Task Next()
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Skipping to next song in voice chat");
+            // TODO: Get channel from worker instead and if no channel found then error
             IVoiceChannel channel = null;
             channel = channel ?? (Context.User as IGuildUser)?.VoiceChannel;
 
@@ -334,6 +366,11 @@ namespace ScriptCord.Bot.Commands
                 embedBuilder.WithDescription("Skipping to next song...");
 
             await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+            if (channel is not null)
+            {
+                SkipSongEvent skipSongEvent = new SkipSongEvent(Context.Guild.Id);
+                PlaybackWorker.Events.Enqueue(skipSongEvent);
+            }
         }
 
         #endregion

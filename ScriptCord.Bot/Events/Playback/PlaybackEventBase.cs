@@ -10,20 +10,16 @@ namespace ScriptCord.Bot.Events.Playback
 {
     public class PlaybackEventBase
     {
-        protected IAudioClient _client;
+        public IAudioClient Client { get; protected set;  }
 
-        protected DateTime _timeOfExecution;
+        public IVoiceChannel Channel { get; protected set; }
 
-        protected IVoiceChannel _channel;
-
-        protected IGuildUser _user;
-
-        public PlaybackEventBase(IAudioClient client, DateTime timeOfExecution, IVoiceChannel channel, IGuildUser user)
+        public PlaybackEventBase(IAudioClient client, IVoiceChannel channel)
         {
-            _client = client;
-            _timeOfExecution = timeOfExecution;
-            _channel = channel;
-            _user = user;
+            Client = client;
+            Channel = channel;
         }
+
+        public PlaybackEventBase() { }
     }
 }

@@ -128,7 +128,7 @@ namespace ScriptCord.Bot.Services.Playback
             {
                 var baseFolder = _configuration.GetSection("store").GetValue<string>("audioPath");
                 var filename = strategy.GenerateFileNameFromMetadata(metadata);
-                var filepath = $"{baseFolder}{filename}.{_configuration.GetSection("store").GetValue<string>("defaultAudioExtension")}";
+                var filepath = $"./{baseFolder}{filename}.{_configuration.GetSection("store").GetValue<string>("defaultAudioExtension")}";
                 try
                 {
                     File.Delete(filepath);

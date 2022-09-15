@@ -29,7 +29,7 @@ namespace ScriptCord.Bot.Strategies.AudioManagement
         {
             var filename = GenerateFileNameFromMetadata(metadata);
             var baseFolder = _configuration.GetSection("store").GetValue<string>("audioPath");
-            var targetFilename = $"{baseFolder}{filename}.{_configuration.GetSection("store").GetValue<string>("defaultAudioExtension")}";
+            var targetFilename = $"./{baseFolder}{filename}.{_configuration.GetSection("store").GetValue<string>("defaultAudioExtension")}";
 
             try
             {

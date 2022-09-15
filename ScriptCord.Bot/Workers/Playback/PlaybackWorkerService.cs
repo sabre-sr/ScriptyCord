@@ -46,7 +46,7 @@ namespace ScriptCord.Bot.Workers.Playback
                     if (playbackEvent is PlaySongEvent)
                     {
                         var castedEvent = (PlaySongEvent)playbackEvent;
-                        _sessions[playbackEvent.GuildId] = new PlaybackSession(castedEvent.Playlist, castedEvent.Client);
+                        _sessions[playbackEvent.GuildId] = new PlaybackSession(castedEvent.Playlist, castedEvent.Client, castedEvent.GuildId);
                         _sessions[playbackEvent.GuildId].StartPlaybackThread();
                     }
                     else if (playbackEvent is SkipSongEvent)
@@ -56,7 +56,10 @@ namespace ScriptCord.Bot.Workers.Playback
                     else if (playbackEvent is UnpauseSongEvent)
                         _sessions[playbackEvent.GuildId]?.UnpausePlayback();
                     else if (playbackEvent is StopPlaybackEvent)
+                    {
                         _sessions[playbackEvent.GuildId]?.StopPlaybackThread();
+                        _sessions.Remove(playbackEvent.GuildId);
+                    }
                 }
 
                 while (EventLogsQueue.IsNotEmpty())
@@ -92,10 +95,13 @@ namespace ScriptCord.Bot.Workers.Playback
 
             private bool _pausePlayback = false;
 
-            public PlaybackSession(IList<PlaylistEntryDto> playlist, IAudioClient client)
+            private ulong _guildId;
+
+            public PlaybackSession(IList<PlaylistEntryDto> playlist, IAudioClient client, ulong guildId)
             {
                 _playlist = playlist;
                 _client = client;
+                _guildId = guildId;
             }
 
             public void StartPlaybackThread()
@@ -162,6 +168,7 @@ namespace ScriptCord.Bot.Workers.Playback
                         _playlist.RemoveAt(0);
                 }
                 await _client.StopAsync();
+                PlaybackWorker.Events.Enqueue(new StopPlaybackEvent(_guildId));
             }
 
             private Process CreateStream(string path)

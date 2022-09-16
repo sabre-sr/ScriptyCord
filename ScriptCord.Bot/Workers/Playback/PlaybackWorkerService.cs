@@ -167,8 +167,8 @@ namespace ScriptCord.Bot.Workers.Playback
                     if (!_pausePlayback)
                         _playlist.RemoveAt(0);
                 }
-                await _client.StopAsync();
                 PlaybackWorker.Events.Enqueue(new StopPlaybackEvent(_guildId));
+                await _client.StopAsync();
             }
 
             private Process CreateStream(string path)

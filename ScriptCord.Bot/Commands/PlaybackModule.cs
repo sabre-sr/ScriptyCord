@@ -293,7 +293,6 @@ namespace ScriptCord.Bot.Commands
             }
         }
 
-
         [SlashCommand("stop", "Stops playback and leaves the voice chat")]
         public async Task Stop()
         {
@@ -313,7 +312,7 @@ namespace ScriptCord.Bot.Commands
             else
                 embedBuilder.WithDescription("Stopping and leaving your voice channel...");
 
-            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+            await RespondAsync(embed: embedBuilder.Build());
             if (channel is not null)
             {
                 StopPlaybackEvent stopPlaybackEvent = new StopPlaybackEvent(Context.Guild.Id);

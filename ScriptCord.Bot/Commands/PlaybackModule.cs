@@ -375,7 +375,7 @@ namespace ScriptCord.Bot.Commands
             }
         }
 
-        [SlashCommand("next", "Skips the current song and starts playing next song")]
+        [SlashCommand("skip", "Skips the current song and starts playing next song")]
         public async Task Next()
         {
             _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Skipping to next song in voice chat");
@@ -394,7 +394,7 @@ namespace ScriptCord.Bot.Commands
             else
                 embedBuilder.WithDescription("Skipping to next song...");
 
-            await RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+            await RespondAsync(embed: embedBuilder.Build());
             if (channel is not null)
             {
                 SkipSongEvent skipSongEvent = new SkipSongEvent(Context.Guild.Id);

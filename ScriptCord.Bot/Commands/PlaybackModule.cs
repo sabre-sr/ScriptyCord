@@ -423,7 +423,7 @@ namespace ScriptCord.Bot.Commands
                     .WithDescription($"**{data.Title}** from {data.SourceType} ({intervalCurrentString}/{intervalTotalString})\r\n{data.Url}").WithImageUrl(data.Thumbnail);
             }
 
-            await ReplyAsync(embed: embedBuilder.Build());
+            await RespondAsync(embed: embedBuilder.Build());
         }
 
         #endregion

@@ -27,7 +27,7 @@ namespace ScriptCord.Bot.Models.Playback
         {
             TimeSpan t = TimeSpan.FromMilliseconds(AudioLength);
             string intervalString = null;
-            if (AudioLength >= 60)
+            if (AudioLength >= 60000)
                 intervalString = t.ToString(@"mm\:ss\:fff");
             else
                 intervalString = t.ToString(@"ss\:fff");

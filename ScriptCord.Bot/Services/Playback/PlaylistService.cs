@@ -1,10 +1,12 @@
 ﻿using CSharpFunctionalExtensions;
+using Discord;
 using Microsoft.Extensions.Configuration;
 using ScriptCord.Bot.Dto.Playback;
 using ScriptCord.Bot.Models.Playback;
 using ScriptCord.Bot.Repositories;
 using ScriptCord.Bot.Repositories.Playback;
 using ScriptCord.Bot.Strategies.AudioManagement;
+using ScriptCord.Bot.Workers.Playback;
 using ScriptCord.Core.Algorithms.Shuffling;
 using System;
 using System.Collections.Generic;
@@ -25,6 +27,7 @@ namespace ScriptCord.Bot.Services.Playback
         Task<Result> RenamePlaylist(ulong guildId, string oldPlaylistName, string newPlaylistName, bool isAdmin = false);
         Task<Result> RemovePlaylist(ulong guildId, string playlistName, bool isAdmin = false);
         Task<Result<IList<PlaylistEntryDto>>> GetShuffledEntries(ulong guildId, string playlistName, bool isAdmin = false);
+        Task<Result<AudioMetadataDto>> GetCurrentlyPlayingMetadata(ulong guildId);
     }
 
     public class PlaylistService : IPlaylistService
@@ -33,13 +36,15 @@ namespace ScriptCord.Bot.Services.Playback
         private readonly IPlaylistRepository _playlistRepository;
         private readonly IPlaylistEntriesRepository _playlistEntriesRepository;
         private readonly IConfiguration _configuration;
+        private readonly PlaybackWorker _playbackWorker;
 
-        public PlaylistService(ILoggerFacade<IPlaylistService> logger, IPlaylistRepository playlistRepository, IPlaylistEntriesRepository playlistEntriesRepository, IConfiguration configuration)
+        public PlaylistService(ILoggerFacade<IPlaylistService> logger, IPlaylistRepository playlistRepository, IPlaylistEntriesRepository playlistEntriesRepository, IConfiguration configuration, PlaybackWorker playbackWorker)
         {
             _logger = logger;
             _playlistRepository = playlistRepository;
             _playlistEntriesRepository = playlistEntriesRepository;
             _configuration = configuration;
+            _playbackWorker = playbackWorker;
         }
 
         public async Task<Result<LightPlaylistListingDto>> GetPlaylistDetails(ulong guildId, string playlistName, bool isAdmin = false)
@@ -274,13 +279,36 @@ namespace ScriptCord.Bot.Services.Playback
             IList<PlaylistEntryDto> playlistEntries = modelResult.Value.PlaylistEntries.Select(x =>
             {
                 var filename = $"{x.Source}-{x.SourceIdentifier}";
-                return new PlaylistEntryDto(x.Title, x.AudioLength, $"{baseFolder}{filename}.{audioExtension}");
+                return new PlaylistEntryDto(x.Id, x.Title, x.AudioLength, $"{baseFolder}{filename}.{audioExtension}");
             }).ToList();
             
             IShuffle<PlaylistEntryDto> shuffler = new FisherYatesListShuffle<PlaylistEntryDto>(playlistEntries);
             shuffler.Shuffle();
 
             return Result.Success(playlistEntries);
+        }
+
+        public async Task<Result<AudioMetadataDto>> GetCurrentlyPlayingMetadata(ulong guildId)
+        {
+            if (!_playbackWorker.HasPlaybackSession(guildId))
+                return Result.Failure<AudioMetadataDto>("Currently the bot is not playing any music");
+
+            PlaylistEntryDto entry = _playbackWorker.GetPlaybackSessionData(guildId);
+
+            var playlistEntryResult = await _playlistEntriesRepository.GetSingleAsync(x => x.Id == entry.EntryId);
+            if (playlistEntryResult.IsFailure)
+            {
+                _logger.LogError(playlistEntryResult);
+                return Result.Failure<AudioMetadataDto>("Failed to get playlist entry data from the database.");
+            }
+            var playlistEntry = playlistEntryResult.Value;
+
+            IAudioManagementStrategy strategy = GetStrategyBySource(playlistEntry.Source);
+            var metadata = await strategy.GetMetadataBySourceId(playlistEntry.SourceIdentifier);
+
+            // Overwrite title in case it's been updated (should show database info rather than youtube data)
+            metadata.Title = playlistEntry.Title;
+            return Result.Success(metadata);
         }
 
         private IAudioManagementStrategy GetStrategyBySource(string source)

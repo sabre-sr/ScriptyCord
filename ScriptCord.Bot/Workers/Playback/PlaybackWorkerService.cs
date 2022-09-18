@@ -81,6 +81,10 @@ namespace ScriptCord.Bot.Workers.Playback
         public bool HasPlaybackSession(ulong guildId)
             => _sessions.ContainsKey(guildId);
 
+        public PlaylistEntryDto GetPlaybackSessionData(ulong guildId) => _sessions[guildId].GetCurrentlyPlayingEntry();
+
+        public TimeSpan GetTimeSinceEntryStart(ulong guildId) => _sessions[guildId].GetTimeSinceEntryStart();
+
         private class PlaybackSession
         {
             private IList<PlaylistEntryDto> _playlist;
@@ -96,6 +100,8 @@ namespace ScriptCord.Bot.Workers.Playback
             private bool _pausePlayback = false;
 
             private ulong _guildId;
+
+            private DateTime _startedCurrentEntryAt;
 
             public PlaybackSession(IList<PlaylistEntryDto> playlist, IAudioClient client, ulong guildId)
             {
@@ -135,6 +141,10 @@ namespace ScriptCord.Bot.Workers.Playback
                 _cancellationTokenSource.Cancel();
             }
 
+            public PlaylistEntryDto GetCurrentlyPlayingEntry() => _playlist[0];
+
+            public TimeSpan GetTimeSinceEntryStart() => DateTime.Now - _startedCurrentEntryAt;
+
             private async Task PlayInBackground()
             {
                 while (_playlist.Count > 0)
@@ -155,7 +165,11 @@ namespace ScriptCord.Bot.Workers.Playback
                     using (var ffmpeg = CreateStream(currentEntry.Path))
                     using (var stream = _client.CreatePCMStream(AudioApplication.Music))
                     {
-                        try { await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream, _cancellationTokenSource.Token); }
+                        try 
+                        {
+                            _startedCurrentEntryAt = DateTime.Now;
+                            await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream, _cancellationTokenSource.Token); 
+                        }
                         catch (OperationCanceledException e) { }
                         catch (Exception e) 
                         {

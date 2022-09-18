@@ -401,6 +401,31 @@ namespace ScriptCord.Bot.Commands
             }
         }
 
+        [SlashCommand("now-playing", "Get information about the currently playing entry")]
+        public async Task NowPlaying()
+        {
+            _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Checking information about currently playing song in voice chat");
+            
+            EmbedBuilder embedBuilder = new EmbedBuilder().WithColor(_modulesEmbedColor);
+            var dataResult = await _playlistService.GetCurrentlyPlayingMetadata(Context.Guild.Id);
+            if (dataResult.IsFailure)
+                embedBuilder.WithTitle("Failure").WithDescription($"{dataResult.Error}!");
+            else
+            {
+                var data = dataResult.Value;
+                TimeSpan timeSinceStart = _playbackWorkerService.GetTimeSinceEntryStart(Context.Guild.Id);
+                TimeSpan totalTime = TimeSpan.FromMilliseconds(data.AudioLength);
+
+                string intervalCurrentString = timeSinceStart.ToString(@"mm\:ss");
+                string intervalTotalString = totalTime.ToString(@"mm\:ss");
+
+                embedBuilder.WithTitle("Currently playing")
+                    .WithDescription($"**{data.Title}** from {data.SourceType} ({intervalCurrentString}/{intervalTotalString})\r\n{data.Url}").WithImageUrl(data.Thumbnail);
+            }
+
+            await ReplyAsync(embed: embedBuilder.Build());
+        }
+
         #endregion
     }
 }

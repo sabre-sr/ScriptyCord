@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using ScriptCord.Bot.Workers.Playback;
 
 namespace ScriptCord.Bot
 {
@@ -44,6 +45,7 @@ namespace ScriptCord.Bot
             {
                 await _interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
                 await _interactionService.RegisterCommandsGloballyAsync(true);
+                await _services.GetRequiredService<PlaybackWorker>().Run();
             }
             catch (Exception e) 
             {

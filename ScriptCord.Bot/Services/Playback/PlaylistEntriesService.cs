@@ -1,5 +1,6 @@
 ﻿using AngleSharp.Dom;
 using CSharpFunctionalExtensions;
+using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using ScriptCord.Bot.Dto.Playback;
 using ScriptCord.Bot.Models.Playback;
@@ -26,11 +27,19 @@ namespace ScriptCord.Bot.Services.Playback
         private readonly ILoggerFacade<IPlaylistEntriesService> _logger;
         private readonly IConfiguration _configuration;
 
-        public PlaylistEntriesService(ILoggerFacade<IPlaylistEntriesService> logger, IPlaylistRepository playlistRepository, IPlaylistEntriesRepository playlistEntriesRepository, IConfiguration configuration)
+        public PlaylistEntriesService(
+            ILoggerFacade<IPlaylistEntriesService> logger, 
+            IPlaylistRepository playlistRepository, 
+            IPlaylistEntriesRepository playlistEntriesRepository, 
+            IConfiguration configuration,
+            DiscordSocketClient client
+            )
         {
+            _logger = logger;
+            _logger.SetupDiscordLogging(configuration, client, "playback");
+
             _playlistEntriesRepository = playlistEntriesRepository;
             _playlistRepository = playlistRepository;
-            _logger = logger;
             _configuration = configuration;
         }
 

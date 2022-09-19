@@ -1,5 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using NLog;
 using ScriptCord.Core.DiscordExtensions;
 using System;
@@ -14,9 +16,10 @@ namespace ScriptCord.Bot.Commands
     {
         private readonly ILoggerFacade<UserManagementModule> _logger;
 
-        public UserManagementModule(ILoggerFacade<UserManagementModule> logger)
+        public UserManagementModule(ILoggerFacade<UserManagementModule> logger, DiscordSocketClient client, IConfiguration configuration)
         {
             _logger = logger;
+            _logger.SetupDiscordLogging(configuration, client, "userManagement");
         }
 
         [RequireUserPermission(GuildPermission.Administrator)]

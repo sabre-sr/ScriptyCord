@@ -4,10 +4,22 @@ if [[ -z "${DEPLOY_ENV}" ]]; then
     DEPLOY_ENV="dev"
     echo "You have not specified DEPLOY_ENV environment variable, defaulting to '${DEPLOY_ENV}' environment"
 fi
-# if [[ -z "${BOT_PATH}" ]]; then
-#     BOT_PATH="/opt/ScriptyCord"
-#     echo "You have not specified BOT_PATH environment variable, defaulting to '${BOT_PATH}'"
-# fi
+if [[ -z "${DISCORD_WEBHOOK}" ]]; then
+    echo "You need to supply a discord webhook via DISCORD_WEBHOOK environment variable in order to notify about deployment"
+    exit 1
+fi
+
+generate_successful_response() {
+  cat <<EOF
+{
+  "embeds": [{
+    "title": "QA Instance update",
+    "description": "Successfully deployed a new QA instance at $(date)",
+    "color": "5793266"
+  }]
+}
+EOF
+}
 
 sudo systemctl stop scriptycord-${DEPLOY_ENV}
 sudo systemctl disable --now scriptycord-${DEPLOY_ENV}
@@ -52,3 +64,5 @@ mkdir ./Builds/ScriptyCord.Bot/Downloads/Audio
 sudo cp scriptycord-${DEPLOY_ENV}.service /etc/systemd/system/scriptycord-${DEPLOY_ENV}.service
 sudo systemctl enable --now scriptycord-${DEPLOY_ENV}
 sudo systemctl start scriptycord-${DEPLOY_ENV}
+
+curl -H "Content-Type: application/json" -X POST -d "$(generate_successful_response)" $DISCORD_WEBHOOK

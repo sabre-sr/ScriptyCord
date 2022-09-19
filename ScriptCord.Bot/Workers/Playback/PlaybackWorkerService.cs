@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Threading;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 
 namespace ScriptCord.Bot.Workers.Playback
 {
@@ -26,9 +28,11 @@ namespace ScriptCord.Bot.Workers.Playback
 
         private bool _stop = false;
 
-        public PlaybackWorker(ILoggerFacade<PlaybackWorker> logger)
+        public PlaybackWorker(ILoggerFacade<PlaybackWorker> logger, IConfiguration configuration, DiscordSocketClient client)
         {
             _logger = logger;
+            _logger.SetupDiscordLogging(configuration, client, "playback");
+
             _sessions = new Dictionary<ulong, PlaybackSession>();
         }
 

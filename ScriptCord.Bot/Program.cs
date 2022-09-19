@@ -70,8 +70,6 @@ namespace ScriptCord.Bot
             await client.LoginAsync(TokenType.Bot, token);
             await client.StartAsync();
 
-            await services.GetRequiredService<PlaybackWorker>().Run();
-
             Console.CancelKeyPress += delegate
             {
                 _logger.Log(LogLevel.Info, "Gracefully shutting down the bot");

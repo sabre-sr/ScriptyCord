@@ -1,4 +1,6 @@
 ﻿using Discord.Interactions;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using ScriptCord.Core.DiscordExtensions;
 using System;
 using System.Collections.Generic;
@@ -10,18 +12,19 @@ namespace ScriptCord.Bot.Commands
 {
     public class TestingModule : ScriptCordCommandModule
     {
-        private readonly InteractionService _commands;
+        private ILoggerFacade<TestingModule> _logger;
 
-        private readonly InteractionHandler _handler;
-
-        public TestingModule(InteractionService commands, InteractionHandler handler)
+        public TestingModule(ILoggerFacade<TestingModule> logger, DiscordSocketClient client, IConfiguration configuration)
         {
-            _commands = commands;
-            _handler = handler;
+            _logger = logger;
+            _logger.SetupDiscordLogging(configuration, client, "general");
         }
 
         [SlashCommand("echo", "Echo an input")]
         public async Task Echo(string echo, [Summary(description: "mention the user")] bool mention = false)
-            => await RespondAsync(echo + (mention ? Context.User.Mention : string.Empty));
+        {
+            _logger.LogDebug($"[GuildId({Context.Guild.Id}),ChannelId({Context.Channel.Id})]: Echoing a user message");
+            await RespondAsync(echo + (mention ? Context.User.Mention : string.Empty));
+        }
     }
 }

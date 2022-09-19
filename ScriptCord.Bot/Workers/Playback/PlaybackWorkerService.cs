@@ -20,6 +20,8 @@ namespace ScriptCord.Bot.Workers.Playback
     {
         private readonly ILoggerFacade<PlaybackWorker> _logger;
 
+        private Thread _thread;
+
         public static Queue<IExecutableEvent> Events { get; } = new Queue<IExecutableEvent>();
 
         public static Queue<(NLog.LogLevel, string)> EventLogsQueue { get; } = new Queue<(NLog.LogLevel, string)>();
@@ -38,7 +40,13 @@ namespace ScriptCord.Bot.Workers.Playback
 
         public async Task Run()
         {
-            _logger.LogInfo("starting worker execution");
+            _thread = new Thread(async () => { await run(); });
+            _thread.Start();
+        }
+
+        public async Task run()
+        {
+            _logger.LogInfo("Starting worker execution");
             while (!_stop)
             {
                 int executed = 0;
@@ -74,7 +82,7 @@ namespace ScriptCord.Bot.Workers.Playback
 
                 if (executed > 0)
                     _logger.LogInfo($"Executed {executed} playback events");
-                
+
                 await Task.Delay(500);
             }
         }

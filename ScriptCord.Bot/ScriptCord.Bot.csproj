@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,5 +6,50 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appsettings.dev.json" />
+    <None Remove="appsettings.json" />
+    <None Remove="appsettings.prod.json" />
+    <None Remove="appsettings.qa.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.qa.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.prod.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.dev.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSharpFunctionalExtensions" Version="2.33.2" />
+    <PackageReference Include="Discord.Net.Commands" Version="3.8.0" />
+    <PackageReference Include="Discord.Net.Core" Version="3.8.0" />
+    <PackageReference Include="Discord.Net.Interactions" Version="3.8.0" />
+    <PackageReference Include="Discord.Net.Rest" Version="3.8.0" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="3.8.0" />
+    <PackageReference Include="FluentNHibernate" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="NHibernate" Version="5.3.13" />
+    <PackageReference Include="NLog" Version="5.0.4" />
+    <PackageReference Include="Npgsql" Version="6.0.6" />
+    <PackageReference Include="YoutubeExplode" Version="6.2.1" />
+    <PackageReference Include="YoutubeExplode.Converter" Version="6.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ScriptCord.Core\ScriptCord.Core.csproj" />
+  </ItemGroup>
 
 </Project>

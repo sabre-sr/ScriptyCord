@@ -1,0 +1,16 @@
+[Unit]
+Description=ScriptyCord discord bot
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=noir
+Environment=ENVIRONMENT_TYPE=qa
+WorkingDirectory=/skywalker-pool/Servers/ScriptCord/Deployment/Builds/ScriptyCord.Bot/
+ExecStart=./ScriptCord.Bot
+
+[Install]
+WantedBy=multi-user.target
